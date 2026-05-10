@@ -26,3 +26,9 @@ Resources:
             RestApiId: !Ref NetworkApi
             Path: /{proxy+}
             Method: ANY
+
+Outputs:
+
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${NetworkApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.10
+    Timeout: 30
+
+Resources:
+
+  NetworkApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+
+  NetworkFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main.handler
+      CodeUri: src/
+
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NetworkApi
+            Path: /{proxy+}
+            Method: ANY

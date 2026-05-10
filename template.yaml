@@ -19,7 +19,7 @@ Resources:
       KeySchema:
         - AttributeName: vpc_id
           KeyType: HASH
-  
+
   NetworkApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -30,16 +30,27 @@ Resources:
     Properties:
       Handler: main.handler
       CodeUri: src/
+
       Environment:
         Variables:
           TABLE_NAME: network-resources
+
       Policies:
         - AmazonEC2FullAccess
+
         - DynamoDBCrudPolicy:
             TableName: network-resources
 
       Events:
-        Api:
+
+        RootApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NetworkApi
+            Path: /
+            Method: ANY
+
+        ProxyApi:
           Type: Api
           Properties:
             RestApiId: !Ref NetworkApi

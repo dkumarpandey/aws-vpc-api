@@ -8,6 +8,18 @@ Globals:
 
 Resources:
 
+  NetworkTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: network-resources
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: vpc_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: vpc_id
+          KeyType: HASH
+  
   NetworkApi:
     Type: AWS::Serverless::Api
     Properties:

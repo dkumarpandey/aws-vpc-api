@@ -30,6 +30,12 @@ Resources:
     Properties:
       Handler: main.handler
       CodeUri: src/
+      Environment:
+        Variables:
+          TABLE_NAME: network-resources
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: network-resources
 
       Events:
         Api:

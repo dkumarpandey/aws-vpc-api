@@ -13,17 +13,45 @@ Resources:
     Properties:
       TableName: network-resources
       BillingMode: PAY_PER_REQUEST
+
       AttributeDefinitions:
         - AttributeName: vpc_id
           AttributeType: S
+
       KeySchema:
         - AttributeName: vpc_id
           KeyType: HASH
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: vpc-api-users
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+
+      ClientName: api-client
+
+      GenerateSecret: false
+
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
 
   NetworkApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
+
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+
+        Authorizers:
+
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
 
   NetworkFunction:
     Type: AWS::Serverless::Function
@@ -50,6 +78,29 @@ Resources:
             Path: /
             Method: ANY
 
+            Auth:
+              Authorizer: NONE
+
+        DocsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NetworkApi
+            Path: /docs
+            Method: ANY
+
+            Auth:
+              Authorizer: NONE
+
+        OpenApiApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref NetworkApi
+            Path: /openapi.json
+            Method: ANY
+
+            Auth:
+              Authorizer: NONE
+
         ProxyApi:
           Type: Api
           Properties:
@@ -62,3 +113,11 @@ Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL
     Value: !Sub "https://${NetworkApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+
+  UserPoolClientId:
+    Description: Cognito App Client ID
+    Value: !Ref UserPoolClient

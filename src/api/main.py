@@ -33,4 +33,7 @@ def network_status(request_id: str):
     return get_status(request_id)
 
 
-handler = Mangum(app)
+handler = Mangum(
+    app,
+    lifespan="off"
+)

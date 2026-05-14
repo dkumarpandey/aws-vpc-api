@@ -45,8 +45,21 @@ module "api_lambda" {
 
   environment_variables = {
     STATE_MACHINE_ARN = module.stepfunctions.state_machine_arn
-    TABLE_NAME = module.dynamodb.table_name
+    TABLE_NAME        = module.dynamodb.table_name
   }
+
+  tags = var.common_tags
+}
+
+module "api_gateway" {
+
+  source = "./modules/api_gateway"
+
+  api_name = "${var.project_name}-http-api"
+
+  lambda_invoke_arn = module.api_lambda.lambda_function_invoke_arn
+
+  lambda_function_name = module.api_lambda.lambda_function_name
 
   tags = var.common_tags
 }

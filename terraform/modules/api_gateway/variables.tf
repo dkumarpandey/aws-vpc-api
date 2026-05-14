@@ -4,7 +4,7 @@ variable "api_name" {
 }
 
 
-variable "lambda_invoke_arn" {
+variable "lambda_function_arn" {
 
   type = string
 }
@@ -15,6 +15,16 @@ variable "lambda_function_name" {
   type = string
 }
 
+variable "cognito_issuer_url" {
+
+  type = string
+}
+
+
+variable "cognito_audience" {
+
+  type = string
+}
 
 variable "tags" {
 
@@ -22,3 +32,4 @@ variable "tags" {
 
   default = {}
 }
+

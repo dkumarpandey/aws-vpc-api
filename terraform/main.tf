@@ -51,15 +51,30 @@ module "api_lambda" {
   tags = var.common_tags
 }
 
+module "cognito" {
+
+  source = "./modules/cognito"
+
+  user_pool_name = "${var.project_name}-user-pool"
+
+  app_client_name = "${var.project_name}-app-client"
+
+  tags = var.common_tags
+}
+
 module "api_gateway" {
 
   source = "./modules/api_gateway"
 
   api_name = "${var.project_name}-http-api"
 
-  lambda_invoke_arn = module.api_lambda.lambda_function_invoke_arn
+  lambda_function_arn = module.api_lambda.lambda_function_arn
 
   lambda_function_name = module.api_lambda.lambda_function_name
+
+  cognito_issuer_url = module.cognito.issuer_url
+
+  cognito_audience = module.cognito.audience
 
   tags = var.common_tags
 }

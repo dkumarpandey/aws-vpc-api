@@ -5,3 +5,12 @@ variable "aws_region" {
 variable "project_name" {
   default = "aws-vpc-api"
 }
+
+variable "common_tags" {
+  type = map(string)
+
+  default = {
+    Project   = "aws-vpc-api"
+    ManagedBy = "Terraform"
+  }
+}

@@ -6,6 +6,11 @@ variable "project_name" {
   default = "aws-vpc-api"
 }
 
+variable "lambda_runtime" {
+  type    = string
+  default = "python3.11"
+}
+
 variable "common_tags" {
   type = map(string)
 

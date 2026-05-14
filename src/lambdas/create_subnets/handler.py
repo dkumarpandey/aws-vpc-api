@@ -16,6 +16,7 @@ def lambda_handler(event, context):
 
         subnets = event.get("subnets", [])
 
+
         if not vpc_id:
             raise ValueError("vpc_id is required")
 
@@ -95,6 +96,7 @@ def lambda_handler(event, context):
         return {
             "status": "SUCCESS",
             "vpc_id": vpc_id,
+            "request_id": event.get("request_id"),
             "subnets": created_subnets
         }
 

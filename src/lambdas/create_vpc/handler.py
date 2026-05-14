@@ -36,10 +36,14 @@ def lambda_handler(event, context):
             ]
         )
 
+
+        
         return {
             "status": "SUCCESS",
+            "request_id": event.get("request_id"),
             "vpc_id": vpc_id,
-            "vpc_cidr": vpc_cidr
+            "vpc_cidr": vpc_cidr,
+            "subnets": payload.get("subnets", [])
         }
 
     except ClientError as e:

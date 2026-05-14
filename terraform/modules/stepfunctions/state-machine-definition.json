@@ -1,0 +1,66 @@
+{
+  "Comment": "VPC Provisioning Workflow",
+  "StartAt": "CreateVPC",
+  "States": {
+
+"CreateVPC": {
+  "Type": "Task",
+  "Resource": "arn:aws:states:::lambda:invoke",
+  "Parameters": {
+    "FunctionName": "${create_vpc_lambda_arn}",
+    "Payload.$": "$"
+  },
+  "OutputPath": "$.Payload",
+  "Next": "CreateSubnets",
+  "Catch": [
+    {
+      "ErrorEquals": ["States.ALL"],
+      "Next": "RollbackResources"
+    }
+  ]
+},
+
+
+	"CreateSubnets": {
+  "Type": "Task",
+  "Resource": "arn:aws:states:::lambda:invoke",
+  "Parameters": {
+    "FunctionName": "${create_subnets_lambda_arn}",
+    "Payload.$": "$"
+  },
+  "OutputPath": "$.Payload",
+  "Next": "PersistMetadata",
+  "Catch": [
+    {
+      "ErrorEquals": ["States.ALL"],
+      "Next": "RollbackResources"
+    }
+  ]
+},
+
+    "PersistMetadata": {
+	  "Type": "Task",
+	  "Resource": "${persist_metadata_lambda_arn}",
+      "Retry": [
+      {
+        "ErrorEquals": ["States.ALL"],
+        "IntervalSeconds": 2,
+        "MaxAttempts": 3,
+        "BackoffRate": 2
+      }
+     ],
+    "End": true
+    },
+
+    "RollbackResources": {
+      "Type": "Task",
+      "Resource": "${rollback_lambda_arn}",
+      "Next": "WorkflowFailed"
+    },
+
+    "WorkflowFailed": {
+      "Type": "Fail",
+      "Error": "ProvisioningFailed"
+    }
+  }
+}

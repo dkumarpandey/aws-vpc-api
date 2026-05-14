@@ -44,6 +44,7 @@ module "api_lambda" {
   lambda_role_arn = module.lambda_role.role_arn
 
   environment_variables = {
+    STATE_MACHINE_ARN = module.stepfunctions.state_machine_arn
     TABLE_NAME = module.dynamodb.table_name
   }
 
@@ -134,6 +135,24 @@ module "rollback_lambda" {
   environment_variables = {
     TABLE_NAME = module.dynamodb.table_name
   }
+
+  tags = var.common_tags
+}
+
+module "stepfunctions" {
+  source = "./modules/stepfunctions"
+
+  state_machine_name = "${var.project_name}-workflow"
+
+  role_name = "${var.project_name}-stepfunctions-role"
+
+  create_vpc_lambda_arn = module.create_vpc_lambda.lambda_function_arn
+
+  create_subnets_lambda_arn = module.create_subnets_lambda.lambda_function_arn
+
+  persist_metadata_lambda_arn = module.persist_metadata_lambda.lambda_function_arn
+
+  rollback_lambda_arn = module.rollback_lambda.lambda_function_arn
 
   tags = var.common_tags
 }

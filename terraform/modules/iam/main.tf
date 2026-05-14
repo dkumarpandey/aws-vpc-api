@@ -52,9 +52,10 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "ec2:DeleteVpc",
           "ec2:CreateSubnet",
           "ec2:DeleteSubnet",
-		  "ec2:CreateTags",
-		  "ec2:DescribeVpcs",
-		  "ec2:DescribeSubnets"
+          "ec2:CreateTags",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "states:StartExecution"
         ]
 
         Resource = "*"

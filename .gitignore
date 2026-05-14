@@ -9,7 +9,7 @@ samconfig.toml
 # Terraform
 # =========================
 
-.terraform/
+**/.terraform/
 *.tfstate
 *.tfstate.*
 crash.log
@@ -19,7 +19,7 @@ crash.*.log
 *.tfplan
 *.plan
 
-# Sensitive variable files
+# Variable files
 *.tfvars
 *.tfvars.json
 
@@ -28,7 +28,3 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
-
-# Terraform lock file (optional)
-# Keep this if working in teams
-# .terraform.lock.hcl

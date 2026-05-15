@@ -1,45 +1,71 @@
-# AWS VPC Provisioning API
+# AWS VPC Provisioning Platform
 
-Serverless API built using AWS SAM, FastAPI, Lambda, API Gateway, Cognito, DynamoDB, and Boto3 to provision AWS VPC resources securely.
+Cloud-native serverless provisioning platform built using Terraform, FastAPI, AWS Lambda, API Gateway, Cognito, Step Functions, DynamoDB, and Boto3 to provision AWS VPC infrastructure asynchronously and securely.
+
+The platform supports:
+- Asynchronous VPC/subnet provisioning workflows
+- JWT-secured APIs using Amazon Cognito
+- Workflow orchestration using AWS Step Functions
+- Provisioning state tracking using DynamoDB
+- Rollback handling for partial infrastructure failures
+- Modular Infrastructure-as-Code using Terraform
 
 ---
 
 # Architecture
 
+```text
 Client
 ↓
-JWT Authentication(Amazon Cognito)
+Amazon Cognito Authentication (JWT)
 ↓
-API Gateway + Cognito Authorizer
+API Gateway HTTP API + JWT Authorizer
 ↓
-AWS Lambda (FastAPI)
+AWS Lambda (FastAPI + Mangum)
 ↓
-AWS EC2 + DynamoDB
+AWS Step Functions
+↓
+Provisioning Workflow Lambdas
+    ├── Create VPC
+    ├── Create Subnets
+    ├── Persist Metadata
+    └── Rollback Resources
+↓
+Amazon DynamoDB
+↓
+AWS EC2 APIs
+```
 
 ---
 
 # Features
 
-- Create AWS VPCs
-- Create public and private subnets
-- Store provisioned resources in DynamoDB
+- Asynchronous VPC provisioning workflow
+- Public and private subnet provisioning
+- Workflow orchestration using AWS Step Functions
+- Provisioning state tracking using DynamoDB
 - JWT authentication using Amazon Cognito
-- API protection using API Gateway Cognito Authorizer
-- OpenAPI / Swagger documentation
+- API protection using API Gateway JWT Authorizer
+- Rollback/compensation handling for provisioning failures
+- Request status retrieval APIs
 - Input validation using Pydantic
-- Infrastructure as Code using AWS SAM
+- Infrastructure as Code using Terraform
+- Modular Terraform architecture
+- OpenAPI / Swagger documentation
 
 ---
 
 # Technologies Used
 
-- Python 3.10
+- Python 3.11
 - FastAPI
+- Mangum
 - AWS Lambda
-- AWS SAM
-- Amazon API Gateway
+- AWS Step Functions
+- Amazon API Gateway HTTP API
 - Amazon Cognito
 - Amazon DynamoDB
+- Terraform
 - Boto3
 - Pydantic
 
@@ -50,23 +76,75 @@ AWS EC2 + DynamoDB
 ```text
 aws-vpc-api/
 │
-├── template.yaml
-├── README.md
+├── terraform/
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   ├── provider.tf
+│   │
+│   └── modules/
+│       ├── api_gateway/
+│       ├── cognito/
+│       ├── dynamodb/
+│       ├── iam/
+│       ├── lambda/
+│       └── stepfunctions/
 │
-└── src/
-    ├── main.py
-    ├── models.py
-    └── requirements.txt
+├── src/
+│   ├── api/
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── requirements.txt
+│   │   └── workflow/
+│   │
+│   ├── create_vpc/
+│   ├── create_subnets/
+│   ├── persist_metadata/
+│   └── rollback/
+│
+└── README.md
+```
+
+---
+
+# Provisioning Workflow
+
+The API follows an asynchronous provisioning model.
+
+## Provision Request Flow
+
+1. Client invokes:
+   POST /network
+
+2. API validates request payload
+
+3. Lambda starts Step Functions execution
+
+4. Step Functions orchestrates:
+   - VPC creation
+   - Subnet creation
+   - Metadata persistence
+
+5. API immediately returns:
+   - request_id
+   - IN_PROGRESS status
+
+6. Client retrieves provisioning status using:
+   GET /network/status/{request_id}
+
+7. Final infrastructure metadata is persisted in DynamoDB
+
+---
 
 # Prerequisites
 
 Install the following tools before deployment:
 
 - AWS Account
-- Python 3.10
+- Python 3.11
 - Git
 - AWS CLI
-- AWS SAM CLI
+- Terraform
 
 ---
 
@@ -96,15 +174,15 @@ aws --version
 
 ---
 
-# Install AWS SAM CLI
+# Install Terraform
 
 Download:
-https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html
+https://developer.hashicorp.com/terraform/downloads
 
 Verify:
 
 ```bash
-sam --version
+terraform --version
 ```
 
 ---
@@ -135,82 +213,88 @@ cd aws-vpc-api
 
 ---
 
-# Create Virtual Environment
+# Install API Dependencies
 
 ```bash
-python -m venv .venv
+cd src/api
 ```
 
-Activate on Windows:
-
 ```bash
-.venv\Scripts\activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r src/requirements.txt
+pip install -r requirements.txt -t .
 ```
 
 ---
 
-# Build Application
+# Terraform Deployment
+
+## Navigate To Terraform Directory
 
 ```bash
-sam build
+cd terraform
+```
+
+## Initialize Terraform
+
+```bash
+terraform init
+```
+
+## Validate Terraform
+
+```bash
+terraform validate
+```
+
+## Review Plan
+
+```bash
+terraform plan
+```
+
+## Deploy Infrastructure
+
+```bash
+terraform apply
 ```
 
 ---
 
-# Deploy Application
+# Terraform Outputs
+
+Terraform deployment outputs:
+
+- API Gateway endpoint
+- Cognito User Pool ID
+- Cognito App Client ID
+- Lambda ARNs
+- Step Functions ARN
+
+View outputs:
 
 ```bash
-sam deploy --guided
-```
-
-Recommended inputs:
-
-| Setting | Value |
-|---|---|
-| Stack Name | aws-vpc-api |
-| AWS Region | ap-south-1 |
-| Confirm changes before deploy | Yes |
-| Allow SAM IAM role creation | Yes |
-| Disable rollback | No |
-| Save arguments to samconfig.toml | Yes |
-
----
-
-# Get Stack Outputs
-
-```bash
-aws cloudformation describe-stacks \
---stack-name aws-vpc-api \
---query "Stacks[0].Outputs"
+terraform output
 ```
 
 ---
 
 # Create Cognito User
 
-Open:
-- AWS Console
-- Amazon Cognito
-- User Pools
-- Open generated user pool
-- Create User
+```bash
+aws cognito-idp sign-up ^
+--client-id <CLIENT_ID> ^
+--username demo-user@example.com ^
+--password Password123! ^
+--user-attributes Name=email,Value=demo-user@example.com
+```
 
 ---
 
-# Set Permanent Password
+# Confirm User
 
 ```bash
-aws cognito-idp admin-set-user-password \
---user-pool-id <USER_POOL_ID> \
---username userName \
---password "******" \
---permanent
+aws cognito-idp admin-confirm-sign-up ^
+--user-pool-id <USER_POOL_ID> ^
+--username demo-user@example.com
 ```
 
 ---
@@ -218,26 +302,44 @@ aws cognito-idp admin-set-user-password \
 # Generate JWT Token
 
 ```bash
-aws cognito-idp initiate-auth \
---auth-flow USER_PASSWORD_AUTH \
---client-id <APP_CLIENT_ID> \
---auth-parameters USERNAME=userName,PASSWORD=****
+aws cognito-idp initiate-auth ^
+--auth-flow USER_PASSWORD_AUTH ^
+--client-id <CLIENT_ID> ^
+--auth-parameters USERNAME=demo-user@example.com,PASSWORD=Password123!
 ```
 
 Copy:
-- IdToken
+- AuthenticationResult.IdToken
 
 ---
 
 # Swagger Documentation
 
 ```text
-https://<API_ID>.execute-api.<REGION>.amazonaws.com/Prod/docs
+https://<API_ID>.execute-api.<REGION>.amazonaws.com/docs
 ```
 
 ---
 
-# Create VPC API
+# Health Endpoint
+
+## Endpoint
+
+```http
+GET /health
+```
+
+## Sample Response
+
+```json
+{
+  "status": "UP"
+}
+```
+
+---
+
+# Create Network API
 
 ## Endpoint
 
@@ -265,10 +367,21 @@ Content-Type: application/json
   ],
   "private_subnets": [
     {
-      "cidr": "10.10.2.0/24",
-      "az": "ap-south-1b"
+      "cidr": "10.10.11.0/24",
+      "az": "ap-south-1a"
     }
   ]
+}
+```
+
+---
+
+# Sample Response
+
+```json
+{
+  "request_id": "3cd2e88b-de83-4fdf-aa46-38e77a97ba08",
+  "status": "IN_PROGRESS"
 }
 ```
 
@@ -277,20 +390,53 @@ Content-Type: application/json
 # Curl Example
 
 ```bash
-curl -X POST "https://<API_URL>/network" \
--H "Authorization: Bearer <ID_TOKEN>" \
--H "Content-Type: application/json" \
--d "{\"vpc_cidr\":\"10.10.0.0/16\",\"public_subnets\":[{\"cidr\":\"10.10.1.0/24\",\"az\":\"ap-south-1a\"}],\"private_subnets\":[{\"cidr\":\"10.10.2.0/24\",\"az\":\"ap-south-1b\"}]}"
+curl -X POST https://<api-id>.execute-api.ap-south-1.amazonaws.com/network ^
+-H "Authorization: Bearer <TOKEN>" ^
+-H "Content-Type: application/json" ^
+-d "{\"vpc_cidr\":\"10.80.0.0/16\",\"public_subnets\":[{\"cidr\":\"10.80.1.0/24\",\"az\":\"ap-south-1a\"}],\"private_subnets\":[{\"cidr\":\"10.80.11.0/24\",\"az\":\"ap-south-1a\"}]}"
 ```
 
 ---
 
-# Get VPC Details
+# Get Provisioning Status
 
 ## Endpoint
 
 ```http
-GET /network/{vpc_id}
+GET /network/status/{request_id}
+```
+
+## Headers
+
+```http
+Authorization: Bearer <ID_TOKEN>
+```
+
+## Sample Response
+
+```json
+{
+  "request_id": "3cd2e88b-de83-4fdf-aa46-38e77a97ba08",
+  "created_at": "2026-05-14T19:25:30.866289",
+  "status": "SUCCESS",
+  "vpc_id": "vpc-002e43123083e37ef",
+  "subnets": [
+    {
+      "name": "public-10.80.1.0/24",
+      "subnet_id": "subnet-07885e36395053181",
+      "availability_zone": "ap-south-1a",
+      "cidr": "10.80.1.0/24",
+      "type": "public"
+    },
+    {
+      "name": "private-10.80.11.0/24",
+      "subnet_id": "subnet-009f32410f80b7d53",
+      "availability_zone": "ap-south-1a",
+      "cidr": "10.80.11.0/24",
+      "type": "private"
+    }
+  ]
+}
 ```
 
 ---
@@ -298,53 +444,73 @@ GET /network/{vpc_id}
 # Validation
 
 The API validates:
+
 - CIDR block format
 - Required fields
 - Request payload structure
+- Public/private subnet configuration
 
 Implemented using:
 - Pydantic models
 - Custom validators
+- Python ipaddress module
 
 ---
 
 # Security
 
-Authentication handled using:
+Authentication is enforced at API Gateway layer using:
+
 - Amazon Cognito User Pool
-- API Gateway Cognito Authorizer
-- JWT IdToken validation
+- JWT-based authentication
+- API Gateway JWT Authorizer
+
+Protected endpoints:
+- POST /network
+- GET /network/status/{request_id}
 
 Public endpoints:
-- /
+- GET /health
 - /docs
 - /openapi.json
 
-Protected endpoints:
-- /network
-- /network/{vpc_id}
+---
+
+# Rollback Handling
+
+The workflow includes rollback/compensation handling for partial infrastructure failures.
+
+Example scenarios:
+- Subnet creation failure after VPC creation
+- Metadata persistence failure
+- Partial workflow execution failures
+
+Rollback Lambda cleans up partially provisioned infrastructure resources.
 
 ---
 
 # Cleanup Resources
 
 ```bash
-sam delete
+terraform destroy
 ```
 
 ---
 
 # Future Improvements
 
-- Least privilege IAM policies
-- Adding support for tagging resources while creation
-- Async provisioning workflows
-- Step Functions orchestration
-- Terraform support
-- CloudWatch structured logging
-- CI/CD pipeline
-- VPC/subnet overlap validation
-- API throttling and WAF
+- Enhanced subnet overlap validation
+- CloudWatch structured logging and dashboards
+- CI/CD pipeline integration
+- WAF integration
+- Resource tagging enhancements
+- Multi-region deployment support
+- Rate limiting and throttling policies
+- Terraform remote state management
 
 ---
+
+# Author
+
+Dileep Pandey
 

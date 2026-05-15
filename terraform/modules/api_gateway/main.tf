@@ -74,6 +74,24 @@ resource "aws_apigatewayv2_route" "status_route" {
   authorizer_id = aws_apigatewayv2_authorizer.cognito_authorizer.id
 }
 
+resource "aws_apigatewayv2_route" "docs_route" {
+
+  api_id = aws_apigatewayv2_api.this.id
+
+  route_key = "GET /docs"
+
+  target = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+}
+
+resource "aws_apigatewayv2_route" "openapi_route" {
+
+  api_id = aws_apigatewayv2_api.this.id
+
+  route_key = "GET /openapi.json"
+
+  target = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+}
+
 
 resource "aws_apigatewayv2_stage" "default" {
 
